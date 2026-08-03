@@ -27,9 +27,9 @@ _(Verified: `make` Python env installed, `pytest tests/unit/test_pii_scrubber.py
 runs and reproduces the 4 failing phone tests; frontend Vite dev server started
 and `http://localhost:5173/` returned HTTP 200.)_
 
-**Cohort ledger:** [ ] Issue added to cohort ledger
-_(To do: add name, GitHub username `SushilPoudel2005`, and issue #146 to the
-section tab, then check this box.)_
+**Cohort ledger:** [x] Issue added to cohort ledger
+_(Added name, GitHub username `SushilPoudel2005`, and issue #146 to the
+section tab of the cohort ledger.)_
 
 ### "Is this issue right for me?" — checklist reasoning
 
