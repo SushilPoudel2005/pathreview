@@ -52,7 +52,7 @@ section tab of the cohort ledger.)_
 
 ## Week 8 — Reproduction & solution planning
 
-**Reproduction commit link:** https://github.com/SushilPoudel2005/pathreview/commit/REPRO_COMMIT_SHA
+**Reproduction commit link:** https://github.com/SushilPoudel2005/pathreview/commit/caed273688d9828b39d46f2af50307f9a94adcb6
 
 **Reproduction summary:**
 Ran `pytest tests/unit/test_pii_scrubber.py -v` and the 4 phone tests for
