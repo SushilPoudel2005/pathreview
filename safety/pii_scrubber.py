@@ -1,6 +1,7 @@
 """PII detection and scrubbing."""
 
 import re
+
 import structlog
 
 logger = structlog.get_logger()
@@ -12,10 +13,17 @@ class PIIScrubber:
     # Regex patterns for common PII
     PII_PATTERNS = {
         "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+        # BUG (issue #146, reproduced Week 8): the inter-group separators below
+        # are `[-.]?`, which never matches a space. So the common parenthesized
+        # format `(555) 123-4567` (space after the `)`) and the space-separated
+        # `+1 555 123 4567` slip through — scrub() leaves them visible and
+        # detect() reports no PII. Fix planned in PLAN.md (Week 9): allow
+        # whitespace as a separator. Do NOT widen so far it swallows plain
+        # 10-digit runs / SSNs.
         "phone_us": r"\b(?:\+?1[-.]?)?\(?([0-9]{3})\)?[-.]?([0-9]{3})[-.]?([0-9]{4})\b",
         "phone_intl": r"\+[0-9]{1,3}[-.]?[0-9]{1,14}",
         "ssn": r"\b(?!000|666)[0-9]{3}-(?!00)[0-9]{2}-(?!0000)[0-9]{4}\b",
-        "street_address": r"\b\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Circle|Cir|Park|Pl|Plaza|Place|Drive|Dr|Way|Parkway|Pkwy|Point|Pt|Pike|Run|Summit|Summit|Terrace|Ter|Trail|Trl|Tunnel|Turnpike|View|Vista|Vlg|Village|Vly|Valley)",
+        "street_address": r"\b\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Circle|Cir|Park|Pl|Plaza|Place|Drive|Dr|Way|Parkway|Pkwy|Point|Pt|Pike|Run|Summit|Summit|Terrace|Ter|Trail|Trl|Tunnel|Turnpike|View|Vista|Vlg|Village|Vly|Valley)",  # noqa: E501
     }
 
     def scrub(self, text: str) -> str:
@@ -29,7 +37,7 @@ class PIIScrubber:
         """
         scrubbed = text
 
-        for pii_type, pattern in self.PII_PATTERNS.items():
+        for pattern in self.PII_PATTERNS.values():
             scrubbed = re.sub(pattern, "[REDACTED]", scrubbed, flags=re.IGNORECASE)
 
         return scrubbed
@@ -47,13 +55,17 @@ class PIIScrubber:
 
         for pii_type, pattern in self.PII_PATTERNS.items():
             for match in re.finditer(pattern, text, flags=re.IGNORECASE):
-                detected.append({
-                    "type": pii_type,
-                    "value": match.group(),
-                    "start": match.start(),
-                    "end": match.end()
-                })
+                detected.append(
+                    {
+                        "type": pii_type,
+                        "value": match.group(),
+                        "start": match.start(),
+                        "end": match.end(),
+                    }
+                )
 
-        logger.info("pii_detected", count=len(detected), types=len(set(d["type"] for d in detected)))
+        logger.info(
+            "pii_detected", count=len(detected), types=len(set(d["type"] for d in detected))
+        )
 
         return detected

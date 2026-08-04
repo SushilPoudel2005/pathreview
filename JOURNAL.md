@@ -49,3 +49,24 @@ section tab of the cohort ledger.)_
 - **Risk of scope creep is low.** The main thing to watch is not over-broadening
   the pattern so it starts matching non-phone digit sequences; the existing tests
   guard against that.
+
+## Week 8 — Reproduction & solution planning
+
+**Reproduction commit link:** https://github.com/SushilPoudel2005/pathreview/commit/REPRO_COMMIT_SHA
+
+**Reproduction summary:**
+Ran `pytest tests/unit/test_pii_scrubber.py -v` and the 4 phone tests for
+issue #146 fail (`test_us_phone_number_redaction`, `test_us_phone_formats`,
+`test_detect_phone_pii`, `test_phone_at_start_of_text`). A direct REPL check
+confirms `scrub("(555) 123-4567")` and `scrub("+1 555 123 4567")` return the
+number unchanged and `detect()` returns `[]`, because the `phone_us` regex's
+`[-.]?` separators never match the space after the `)` / between groups.
+
+**PLAN.md link:** https://github.com/SushilPoudel2005/pathreview/blob/fix/146-pii-parenthesized-phone/PLAN.md
+
+**Walkthrough video (recommended):**
+
+**Blockers or open questions:**
+None blocking. Noting for Week 9: `test_mixed_pii_and_text` also fails, but from
+the unrelated over-greedy `street_address` regex (it redacts "Python"), not from
+issue #146 — I'll keep that out of scope for this fix.
