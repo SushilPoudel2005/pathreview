@@ -70,3 +70,58 @@ number unchanged and `detect()` returns `[]`, because the `phone_us` regex's
 None blocking. Noting for Week 9: `test_mixed_pii_and_text` also fails, but from
 the unrelated over-greedy `street_address` regex (it redacts "Python"), not from
 issue #146 — I'll keep that out of scope for this fix.
+
+## Week 9 — Solution building & PR submission
+
+### Check-in 1 (mid-week)
+
+**Current progress:**
+Recorded the pre-change baseline (`make test-unit`: 53 failed / 375 passed;
+`make check`: ~178 pre-existing ruff findings across unrelated modules).
+Implemented the core fix from PLAN.md sub-task 1: widened each `phone_us`
+separator from `[-.]?` to `[-.\s]?` in `safety/pii_scrubber.py`. Verified at the
+REPL that all four formats (`555-123-4567`, `(555) 123-4567`, `555.123.4567`,
+`+1 555 123 4567`) now redact and that a bare SSN / version string is not
+misclassified (sub-tasks 2 and 4).
+
+**Next steps:**
+Finish PLAN.md sub-task 3 (add regression tests + full-suite regression check)
+and sub-task 5 (remove the Week-8 BUG marker, run `make check`/`make test-unit`,
+open the PR).
+
+**Blockers:**
+None.
+
+---
+
+### Check-in 2 (end of week)
+
+**PR link:** https://github.com/ascherj/pathreview/pull/717
+
+**Branch:** `fix/146-pii-parenthesized-phone`
+
+**What you built:**
+Widened the `phone_us` regex separators to also accept a single space
+(`[-.]?` → `[-.\s]?`), so `(555) 123-4567` and `+1 555 123 4567` are now redacted
+by `scrub()` and found by `detect()` alongside the dash/dot formats. The digit
+group anchoring (`{3}{3}{4}`) is unchanged, so SSNs and version numbers are not
+misclassified as phone numbers.
+
+**Tests added or updated:**
+`tests/unit/test_pii_scrubber.py` — added three regression tests
+(`test_parenthesized_phone_digits_fully_removed`,
+`test_space_separated_plus_one_phone_detected`,
+`test_phone_fix_does_not_misclassify_ssn`) and gave two pre-existing
+assertion-less tests real assertions so the file is ruff-clean.
+
+**Self-review confirmation:** [x] make check passes  [x] make test-unit passes
+_"Passes" per the pre-existing-failures rule: my changes introduce **no new
+failures**. Baseline `make test-unit` was 53 failed / 375 passed; after my
+change it is 49 failed / 382 passed — a set-diff confirms the only difference is
+the 4 #146 phone tests now passing. The two changed files are ruff/black-clean
+and `mypy safety/` passes; the remaining repo-wide `make check`/`make test-unit`
+failures (including `test_mixed_pii_and_text`, an unrelated greedy
+`street_address` regex) are pre-existing and documented in the PR._
+
+**Draft PR feedback received from:** none (opened ready for review; happy to
+incorporate peer/mentor feedback in Slack before merge)
