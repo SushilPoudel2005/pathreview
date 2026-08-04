@@ -125,3 +125,86 @@ failures (including `test_mixed_pii_and_text`, an unrelated greedy
 
 **Draft PR feedback received from:** none (opened ready for review; happy to
 incorporate peer/mentor feedback in Slack before merge)
+
+## Week 10 — Iteration & reflection
+
+### Reviewer feedback
+
+**Feedback received:** [ ] Yes  [x] No — still awaiting review
+
+**Summary of feedback:**
+No reviewer or maintainer feedback came in. As of the end of the week, PR #717
+(https://github.com/ascherj/pathreview/pull/717) is still open with 0 reviews,
+0 review comments, and 0 issue comments. Per the Summer 2026 course note,
+reviewer feedback is not a feature this term, so this is expected rather than a
+sign the PR was ignored.
+
+**How you responded:**
+No changes were required since no feedback arrived. If a maintainer does comment,
+the two things I already flagged in my own PR description are the most likely
+discussion points and I have responses ready: (1) the parenthesized format
+redacts to `([REDACTED]` (leading `(` remains) — the digits, i.e. the actual
+PII, are fully removed, and consuming the paren would mean loosening the `\b`
+anchor at the risk of over-matching; (2) I bypassed the pre-commit `mypy` hook
+because it flags missing annotations across the entire historically-untyped test
+suite, while the graded `make check` typecheck scope excludes `tests/` and passes
+for `safety/`.
+
+---
+
+### Reflection
+
+**What was harder than you expected?**
+Trusting a one-line change. The whole fix is `[-.]?` → `[-.\s]?` in a single
+regex, and my instinct was that something that small couldn't be "the answer" —
+so most of my effort went into *proving* it rather than writing it: capturing a
+baseline of 53 failing unit tests before touching anything, then doing a literal
+`comm` set-diff of the failure lists afterward to show the only delta was the 4
+`#146` tests flipping to green. Separating my one real change from the ~178
+pre-existing `ruff` findings and 49 unrelated test failures was harder and slower
+than the fix itself. I also didn't expect the tooling to fight me: the
+pre-commit hooks ran `black`/`ruff`/`mypy` on the *whole file*, so touching one
+regex surfaced a pile of pre-existing lint and type debt that I had to reason
+about (fix it? ignore it? bypass the hook?) without expanding my scope.
+
+**What did you learn about working in a large codebase?**
+That "does it pass?" is the wrong question in a repo that's already red — the
+real bar is "did *I* make it worse?", and you can only answer that if you record
+the baseline *before* you start. I also learned to hold scope discipline under
+temptation: `test_mixed_pii_and_text` fails in the very file I was editing, and
+it would have been easy to "just fix" the greedy `street_address` regex too — but
+that's a different bug (#146 is only about phones), so the disciplined move was to
+document it as out-of-scope and leave it. Contributing to someone else's
+production code is much more about *evidence and boundaries* (baselines, set-diffs,
+a PR description a stranger can audit, respecting the existing test conventions)
+than about the cleverness of the change. On my own projects I'd have just fixed
+everything I saw and pushed to `main`.
+
+**How did AI tools help — and where did they fall short?**
+AI was most useful for navigation and mechanical rigor: tracing *why* the regex
+failed on `(555) 123-4567` (the space after `)` that `[-.]?` can't consume),
+scaffolding the regression tests in the file's existing style, and running the
+baseline-vs-after `comm` diff to prove no new failures. Where it fell short was
+judgment calls that needed context AI didn't have: deciding that the stray
+leading `(` was acceptable (PII is the digits, not the bracket); deciding *not*
+to fix the unrelated address regex; and deciding how to handle the pre-commit
+`mypy` hook honestly rather than just silencing it. AI could generate options
+quickly, but choosing the minimal, defensible one — and being able to justify it
+to a maintainer — was on me.
+
+**What would you do differently if you started over?**
+Two things. First, I'd open the PR as a genuine **draft early in the week** and
+post it in Slack for peer feedback, instead of going straight to
+ready-for-review — the assignment explicitly rewards that loop and I skipped it.
+Second, in Week 8 I'd have run the *full* unit suite for my baseline, not just
+`test_pii_scrubber.py`; I discovered the codebase-wide 53-failure baseline only
+in Week 9, and knowing it a week earlier would have shaped my PLAN's risk section
+more accurately.
+
+**What are you most proud of from this module?**
+Not the regex — the paper trail around it. Anyone can open PR #717 and verify
+every claim I made: the reproduction commit, the before/after test counts, the
+set-diff proving zero new failures, and the two honest caveats I raised against
+my *own* change instead of hiding them. In a messy, already-failing codebase I
+produced a change a maintainer can trust without having to re-run everything
+themselves, and that felt like real engineering.
