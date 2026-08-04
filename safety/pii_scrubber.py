@@ -13,14 +13,10 @@ class PIIScrubber:
     # Regex patterns for common PII
     PII_PATTERNS = {
         "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
-        # BUG (issue #146, reproduced Week 8): the inter-group separators below
-        # are `[-.]?`, which never matches a space. So the common parenthesized
-        # format `(555) 123-4567` (space after the `)`) and the space-separated
-        # `+1 555 123 4567` slip through — scrub() leaves them visible and
-        # detect() reports no PII. Fix planned in PLAN.md (Week 9): allow
-        # whitespace as a separator. Do NOT widen so far it swallows plain
-        # 10-digit runs / SSNs.
-        "phone_us": r"\b(?:\+?1[-.]?)?\(?([0-9]{3})\)?[-.]?([0-9]{3})[-.]?([0-9]{4})\b",
+        # Separators allow a hyphen, dot, or single space (issue #146) so the
+        # parenthesized `(555) 123-4567` and space-separated `+1 555 123 4567`
+        # formats are matched alongside `555-123-4567` and `555.123.4567`.
+        "phone_us": r"\b(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})\b",
         "phone_intl": r"\+[0-9]{1,3}[-.]?[0-9]{1,14}",
         "ssn": r"\b(?!000|666)[0-9]{3}-(?!00)[0-9]{2}-(?!0000)[0-9]{4}\b",
         "street_address": r"\b\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Circle|Cir|Park|Pl|Plaza|Place|Drive|Dr|Way|Parkway|Pkwy|Point|Pt|Pike|Run|Summit|Summit|Terrace|Ter|Trail|Trl|Tunnel|Turnpike|View|Vista|Vlg|Village|Vly|Valley)",  # noqa: E501
